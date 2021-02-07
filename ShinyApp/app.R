@@ -37,14 +37,14 @@ server <- function(input, output) {
                 ifelse(
                     input$y =="IP","In Patient Opioid Related Hospitalizations",
                     ifelse(
-                        input$y =="NaturalandSemisyntheticOpioids","Natural and Semisynthetic Opioids (e.g. oxycodone, hydrocodone)",
+                        input$y =="NaturalandSemisyntheticOpioids","Natural and Semisynthetic Opioid Overdose Deaths <br> (e.g. oxycodone, hydrocodone)",
                         ifelse(
-                            input$y =="SyntheticOpioids","Synthetic Opioids, other than Methadone (e.g. fentanyl, tramadol)","Title"
+                            input$y =="SyntheticOpioids","Synthetic Opioid Overdose Deaths, other than Methadone <br> (e.g. fentanyl, tramadol)","Title"
                         ))))))
     
     output$p <- renderPlotly({
         plot_geo() %>%
-            add_trace(z = full_data[[input$y]], span = I(0), locations = full_data$State, locationmode = 'USA-states', colors="Purples") %>% 
+            add_trace(z = full_data[[input$y]], span = I(0), locations = full_data$State, locationmode = 'USA-states', colors="YlOrRd") %>% 
             layout(geo=g) %>% 
             colorbar(title="Count") %>% 
             layout(title=title())
@@ -53,11 +53,16 @@ server <- function(input, output) {
 
 
 ui <- fluidPage(
-    selectInput(
-        "y", "Measures", 
-        choices = names(options)
-    ),
-    plotlyOutput("p")
+    
+    titlePanel("Opioid Dashboard"),
+    
+    sidebarLayout(
+        
+        sidebarPanel(selectInput("y", "Measures", choices = names(options))),
+        
+        mainPanel(plotlyOutput("p")
+        )
+    )
 )
 
 
