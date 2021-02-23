@@ -1,11 +1,15 @@
 library(maps)
-library(leaflet )    
-library(shiny )
+library(maptools)
+library(leaflet)    
+library(shiny)
+library(data.table)
 library(shinydashboard )
+library(plotly)
 library(shinydashboardPlus)
 library(dplyr)
 
 # get a SpatialPolygonsDataFrame of US states
+#need to add alaska & hawaii
 usa <- map("state", fill = TRUE)
 IDs <- sapply(strsplit(usa$names, ":"), function(x) x[1])
 usa <- map2SpatialPolygons(usa, IDs=IDs, proj4string=CRS("+proj=longlat +datum=WGS84"))
@@ -32,8 +36,9 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
             helpText("Use the dropdown to view different measures and years on the choropleth map. Select states by clicking on the map to see a comparison on the plot below."),
-            selectInput("dropdown", "Measure", choices = dropdown_options, selected = "IP"),
-            selectInput("dropdown_year", "Year", choices = year_list, selected = "2018"),
+            selectInput("dropdown", "Select Measure", choices = list("In Patient Opioid Related Hospitalizations" = "IP", "Emergecy Department Opioid Related Hospitalizations" = "ED"), selected = "IP"),
+            #selectInput("dropdown_year", "Year", choices = year_list, selected = "2018"),
+            sliderInput("dropdown_year", "Select Year",min = 2005, max = 2018, value = 2018, step=1, animate=TRUE),
             actionButton(
                 inputId = "clearHighlight",
                 label = "Clear selections",
@@ -48,6 +53,7 @@ ui <- fluidPage(
                     outputId = "myMap",
                     height = 450)),
             box(
+                background = 'blue',
                 h3(textOutput("title_line")),
                 width = 12,
                 plotlyOutput("plot")
@@ -60,7 +66,6 @@ ui <- fluidPage(
 server <- function( input, output, session ){
     #create palette for the data chosen
     #i have no idea how this palette works bc chosen isnt a variable i use oop
-    pal <- colorNumeric("Purples",usa$chosen,na.color = "#808080",alpha = FALSE)
     #function to create foundation map
     output$plot <- renderPlotly(plot_ly() %>%
                                     layout(paper_bgcolor="#F5F5F5",plot_bgcolor="#F5F5F5") %>% 
@@ -72,8 +77,14 @@ server <- function( input, output, session ){
                                         font = list(size = 20)
                                     ))
     foundational.map <- reactive({
-        output$title <- renderText({paste("Chloropleth Map of", input$dropdown)})
-        output$title_line <- renderText({paste(input$dropdown," over time for selected states")})
+        if (input$dropdown == "IP") {
+            output$title <- renderText({paste("Chloropleth Map of In Patient Hospitalizations for ", input$dropdown_year)})
+            output$title_line <- renderText({paste("In Patient Hospitalizations over time for selected states")})
+        } else {
+            output$title <- renderText({paste("Chloropleth Map of Emergecy Department Hospitalizations for ", input$dropdown_year)})
+            output$title_line <- renderText({paste("Emergecy Department Hospitalizations over time for selected states")})
+        }
+        
         
         #filter data 
         filter_data <- reactive({
@@ -82,6 +93,10 @@ server <- function( input, output, session ){
             data <- data %>% select(State,Year,input$dropdown)
         })
         data <- filter_data()
+        create_pal <- reactive ({pal <- colorNumeric("Purples",data[[input$dropdown]],na.color = "#808080",alpha = FALSE)
+        })
+        pal <- create_pal()
+        
         #set labels
         labels <- sprintf("<strong>%s</strong><br/>%g",usa$unique.IDs., data[[input$dropdown]]) %>% lapply(htmltools::HTML)
         leaflet() %>%
