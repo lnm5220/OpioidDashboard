@@ -13,8 +13,8 @@ HCUPKFF <- fread("https://raw.githubusercontent.com/lnm5220/OpioidDashboard/main
 
 
 
-#dt2 <- tibble::rownames_to_column(as.data.frame(t(dt)), "content")
 
+#function for formatting policy data for timeline
 timeline_df <- function(state){
   temp <- filter(dt, dt$State == state)
   temp <- tibble::rownames_to_column(as.data.frame(t(temp)), "content")
@@ -41,7 +41,8 @@ ui <- dashboardPage(
                 box(
                   title = "Controls",
                   width = 4,
-                  tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00006900; border-top: 1px solid #00003900; border-bottom: 1px solid #00003900 ;}")),
+                  ##HTML css tags for styling slider
+                  tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00000000; border-top: 1px solid #00000000; border-bottom: 1px solid #00000000 ;}")),
                   tags$style(HTML(".js-irs-0 .irs-single { font-size: 110%; color: #000000; background: #ffffff }")),
                   tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 110%; color: #000000; background: #808080}")),
                   #tags$style(HTML(".js-irs-0 .irs-grid-pol {}")),
@@ -88,43 +89,12 @@ ui <- dashboardPage(
     
   )
 )
-#setSliderColor("#00006900",1),
-  #chooseSliderSkin("Flat"),
-  
-  #sliderInput("dropdown_year", "Select Year",min = 2005, max = 2018, value = 2018, step=1, sep = "", animate=TRUE),
-
-
 
 
 
 
 
 server <- function(input, output, session) {
-#  filter_state_data <- reactive({
-#    # Filter data based on input year and then select measure
-#    data <-  HCUPKFF %>% filter(State %in% input$dropdown_input)
-#  })
-  
-#  ss_data <- filter_state_data()
-  
-  
- # line.graph <- reactive({
-  #  y <- list(title = "Count")
-   # plot_ly(ss_data, x = ~Year,y = ss_data[[input$checkbox]],color = ~State, type = 'scatter', mode = 'lines', name = ~State, connectgaps = FALSE) %>% 
-    #  layout(paper_bgcolor="#FFFFFF",plot_bgcolor="#FFFFFF",yaxis=y) %>% 
-     # add_annotations(
-      #  x= 0.1,
-       # y= 1,
-        #xref = "paper",
-#        yref = "paper",
- #       text = "Note: Incomplete lines represent missing data.",
-  #      showarrow = F,
-   #     font= list(size=15)
-    #  )})
-  
- # output$single.state.plot <- renderPlotly({line.graph})
-    
-    
   
   output$timeline <- renderTimevis({
     timevis(timeline_df(input$dropdown_input))
