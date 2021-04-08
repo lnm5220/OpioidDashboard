@@ -236,7 +236,7 @@ ui <- navbarPage(
                tags$style(HTML(".js-irs-1 .irs-grid-pol.small { display: none;}")),
                tags$style(HTML(".js-irs-1 .irs-grid-text { font-size: 10px;}")),
                tags$style(HTML(".js-irs-1 .irs-handle { background: #18BC9C;}")),
-               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, animate=TRUE),
+               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, sep = "", animate=TRUE),
                actionButton(
                  inputId = "clearCountyHighlight",
                  label = "Clear selections",
