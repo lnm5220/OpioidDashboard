@@ -2,15 +2,13 @@ library(maps)
 library(maptools)
 library(leaflet)    
 library(shiny)
-library(remotes)
-library(devtools)
-library(albersusa)
 library(data.table)
 library(shinydashboard)
 library(shinyhelper)
 library(tidyr)
 library(plotly)
 library(dplyr)
+library(stringr)
 library(sf)
 library(sp)
 library(DT)
@@ -24,17 +22,25 @@ library(timevis)
 
 # DASHBOARD IN NAVBARPAGE INSTEAD OF SHINYDASHBOARD-----------------------------
 
-# NOTES: The only real functioning part of this dashboard is the timeline on the single state page.
-## The map and line graphs wouldn't work when I tried them (some issues with the spatial polygons and what not), so will have to work that out.
-
-
+#LOAD IN STATE DATA
 Policy <- fread("./PolicyDates.csv", quote="")
-HCUPKFFdata <- fread("https://raw.githubusercontent.com/lnm5220/OpioidDashboard/main/DashboardIntegration/HCUPKFFAnnual.csv", quote = "")
+#state_opioid_data <- fread("./data.csv", quote="")
+state_opioid_data <- fread("./OpioidData.CSV")
+spdf <- st_read("./spdf.shp")
 
+#LOAD IN COUNTY DATA
+pa_policy <- read.csv("./pa_policies.csv")
+#eventually fix these small problems so we can just load in 2 datasets
+policy_frame <- data.frame(pa_policy)
+row.names(policy_frame) <- c('PDMP.Enactment',"PDMP.ContingentonFunding","PDMP.Electronic","PDMP.UserAccess","PillMill","MedicaidExpansion.Implemented","NaloxoneAccess")
+county_measure_data <- fread("./AnnualCounty.csv")
 
-#Call USA sf to get USA data
-spdf <- ms_simplify(usa_sf(), keep = 0.1) #spatial dataframe using usa_sf()
-spdf <- spdf %>% select(-c('pop_2010','pop_2011','pop_2012','pop_2013','pop_2014','census','pop_estimataes_base','lsad'))
+county_shapes <- st_read("./PaCounty2020_12.shp")
+county_shapes <- county_shapes %>% 
+  rename(
+    County = COUNTY_NAM)
+county_shapes$County = str_to_title(county_shapes$County)
+
 
 #Set basemap projection using leaflet CRS (allowing us to see AK & HI)
 epsg2163 <- leafletCRS(
@@ -55,49 +61,61 @@ timeline_df <- function(state){
 
 ui <- navbarPage(
   "OPADD",
-  theme = shinytheme("slate"),
+  theme = shinytheme("flatly"),
   tabPanel("Multi-State Comparison",
            useShinydashboard(),
            fluidRow(
              box(
                width=12,
-               title="Welcome to OPAD (Opioid Policy and Data Dashboard)",
+               title="Welcome to OPADD (Opioid Policy and Data Dashboard)",
                h5("Use this dashboard to explore data about the opioid epdimeic.
                          Customize the data shown on the map and then select states on the map to compare them.")                    )),
            fluidRow(
              box(
-               title= "State Measure Heat Map",
+               title= "Select a state on the map",
                width = 8,
                leafletOutput(
-                 outputId = "map",
+                 outputId = "statemap",
                  height = 450)),
              box(
                width = 4,
                title = "Controls",
-               radioButtons("measure", "Select a Measure to visualize",
-                            choices = list("Inpatient Opioid Related Hospitalizations" = "IP",
-                                           "Emergency Department Opioid Related Hospitalizations" = "ED",
-                                           "Natural Semisynthetic Overdose Deaths (e.g. Oxycodone)"="OverdoseDeathsNaturalSemisynthetic",
-                                           "Methadone Overdose Deaths"="OverdoseDeathsMethadone",
-                                           "Heroin Overdose Deaths"="OverdoseDeathsHeroin",
-                                           "Synthetic Opioid Overdose Deaths"="OverdoseDeathsSyntheticOpioids"),
-                            selected = "IP") %>% helper(type = "inline",
-                                                        title = "What do these variables mean?",
-                                                        content = c("<b>Inpatient Opioid Related Hospitalizations</b> refers to the number of inpatient hospital stays that related to the use of an opioid.",
-                                                                    "<b>Emergency Department Opioid Related Hospitalizations</b> refers to the number of emergency department visits that were related to the use of an opioid.",
-                                                                    "<b>Natural Semisynthetic Overdose Deaths </b> refers to overdose deaths caused by natural and semisynthetic opioids including but not limited to morphine, codeine, oxycodone, hydrocodone, hydromorphone, and oxymorphone.",
-                                                                    "<b>Methadone Overdose Deaths</b> refers to overdose deaths caused by methadone, a synthetic opioid.",
-                                                                    "<b>Heroin Overdose Deaths</b> refers to overdose deaths caused by heroin.",
-                                                                    "<b>Synthetic Opioid Overdose Deaths</b> refers to overdose deaths caused by synthetic opioids, drugs made in laboratories to mimic the effect of natural opiates.")),
-               tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00006900; border-top: 1px solid #00003900; border-bottom: 1px solid #00003900 ;}")),
+               selectInput("measure", "Select a Measure to visualize",
+                           choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioid"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
+                                          "Opioid Overdose Deaths by Synthetic Opioids"="Opioid.Overdose.Deaths.by.Synthetic.Opioids..other.than.Methadone..e.g..fentanyl..tramadol.",
+                                          "Opioid Overdose Deaths by Methadone"="Opioid.Overdose.Deaths.by.Methadone",                                                        
+                                          "Opioid Overdose Deaths by Heroin"="Opioid.Overdose.Deaths.by.Heroin",                                                          
+                                          "All Opioid Overdose Deaths"="Opioid.Overdose.Deaths",                                                                    
+                                          "All Drug Overdose Deaths"="All.Drug.Overdose.Deaths",                                                    
+                                          "Opioid Overdose Deaths as Perctange of all Overdose Deaths"="Opioid.Overdose.Deaths.as.a.Percent.of.All.Drug.Overdose.Deaths",                   
+                                          "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)"= "Opioid.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",
+                                          "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)"="All.Drug.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",                        
+                                          "Rate of Opioid Related In Patient Hospital Visits"="IPRate",                                                                                     
+                                          "Rate of Ppioid Related Emergency Department Visits"="EDRate",                                                                                  
+                                          "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)"="RATESOpioidOverdoseDeathsByNaturalAndSemisyntheticOpioid",                             
+                                          "Rate of Opioid Overdose Deaths (Synthetic Opioids)"="RATESOpioidOverdoseDeathsBySyntheticOpioidsOtherThanMethadone",                          
+                                          "Rate of Opioid Overdose Deaths (Methadone)"="RATESOpioidOverdoseDeathsbyMethadone",                                                   
+                                          "Rate of Opioid Overdose Deaths (Herion)"="RATESOpioidOverdoseDeathsByHeroin",                                                        
+                                          "Counts of Opioid Related Inpatient Hospital Visits"="IPvisitCount",                                                                           
+                                          "Counts of Opioid Related Emergency Department Visits"="EDvisitCount"),
+                           selected = "IPvisitCount") %>% helper(type = "inline",
+                                                                 title = "What do these variables mean?",
+                                                                 content = c("<b>Inpatient Opioid Related Hospitalizations</b> refers to the number of inpatient hospital stays that related to the use of an opioid.",
+                                                                             "<b>Emergency Department Opioid Related Hospitalizations</b> refers to the number of emergency department visits that were related to the use of an opioid.",
+                                                                             "<b>Natural Semisynthetic Overdose Deaths </b> refers to overdose deaths caused by natural and semisynthetic opioids including but not limited to morphine, codeine, oxycodone, hydrocodone, hydromorphone, and oxymorphone.",
+                                                                             "<b>Methadone Overdose Deaths</b> refers to overdose deaths caused by methadone, a synthetic opioid.",
+                                                                             "<b>Heroin Overdose Deaths</b> refers to overdose deaths caused by heroin.",
+                                                                             "<b>Synthetic Opioid Overdose Deaths</b> refers to overdose deaths caused by synthetic opioids, drugs made in laboratories to mimic the effect of natural opiates.")),
+               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00000000; border-top: 1px solid #00000000; border-bottom: 1px solid #00000000 ;}")),
+               tags$style(HTML(".js-irs-0 .irs-single { font-size: 110%; color: #000000; background: #ffffff }")),
+               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 110%; color: #000000; background: #808080}")),
                sliderInput("dropdown_year", "Select Year",min = 2005, max = 2018, value = 2018, step=1, sep = "", animate=TRUE),
                actionButton(
                  inputId = "clearHighlight",
                  label = "Clear selections",
                  style = "color: #fff; background-color: #D75453; border-color: #C73232"),
                helpText("The states you have selected will populate below:"),
-               textOutput("list"),
-               actionButton("jump.to.ss", "Single-State for XXX")
+               textOutput("list")
              ),
            ),
            fluidRow(
@@ -115,49 +133,205 @@ ui <- navbarPage(
              box(
                title = "State Metrics Analysis",
                width = 8,
-               plotlyOutput("single.state.plot")
+               plotOutput("single.state.plot")
              ),
-             box(
-               title = "Controls",
-               width = 4,
-               selectInput("dropdown_input", "Select State", c("Select a State" = "", Policy$State)),
-               checkboxGroupButtons("checkbox", "Select Metrics to compare on Line Graph",
-                                    choices = list("Inpatient Opioid Related Hospitalizations" = "IP",
-                                                   "Emergency Department Opioid Related Hospitalizations" = "ED",
-                                                   "Natural Semisynthetic Overdose Deaths (e.g. Oxycodone)"="OverdoseDeathsNaturalSemisynthetic",
-                                                   "Methadone Overdose Deaths"="OverdoseDeathsMethadone",
-                                                   "Heroin Overdose Deaths"="OverdoseDeathsHeroin",
-                                                   "Synthetic Opioid Overdose Deaths"="OverdoseDeathsSyntheticOpioids")),
-               #checkboxGroupInput("checkbox", "Select Metrics to compare on Line Graph",
-               #choices = list("Inpatient Opioid Related Hospitalizations" = "IP",
-               #"Emergency Department Opioid Related Hospitalizations" = "ED",
-               #"Natural Semisynthetic Overdose Deaths (e.g. Oxycodone)"="OverdoseDeathsNaturalSemisynthetic",
-               #"Methadone Overdose Deaths"="OverdoseDeathsMethadone",
-               #"Heroin Overdose Deaths"="OverdoseDeathsHeroin",
-               #"Synthetic Opioid Overdose Deaths"="OverdoseDeathsSyntheticOpioids"))
-             )
+             fluidRow(
+               box(
+                 title = "Controls",
+                 width = 4,
+                 selectInput("dropdown_state_input", selected = "Alabama","Select State", c("Select a State" = "", Policy$State)),
+                 selectInput("single_state_checkbox", "Select Metrics to compare on Line Graph",selected="Opioid.Overdose.Deaths.by.Heroin",multiple=TRUE,
+                             choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioid"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
+                                            "Opioid Overdose Deaths by Synthetic Opioids"="Opioid.Overdose.Deaths.by.Synthetic.Opioids..other.than.Methadone..e.g..fentanyl..tramadol.",
+                                            "Opioid Overdose Deaths by Methadone"="Opioid.Overdose.Deaths.by.Methadone",                                                        
+                                            "Opioid Overdose Deaths by Heroin"="Opioid.Overdose.Deaths.by.Heroin",                                                          
+                                            "All Opioid Overdose Deaths"="Opioid.Overdose.Deaths",                                                                    
+                                            "All Drug Overdose Deaths"="All.Drug.Overdose.Deaths",                                                    
+                                            "Opioid Overdose Deaths as Perctange of all Overdose Deaths"="Opioid.Overdose.Deaths.as.a.Percent.of.All.Drug.Overdose.Deaths",                   
+                                            "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)"= "Opioid.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",
+                                            "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)"="All.Drug.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",                        
+                                            "Rate of Opioid Related In Patient Hospital Visits"="IPRate",                                                                                     
+                                            "Rate of Ppioid Related Emergency Department Visits"="EDRate",                                                                                  
+                                            "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)"="RATESOpioidOverdoseDeathsByNaturalAndSemisyntheticOpioid",                             
+                                            "Rate of Opioid Overdose Deaths (Synthetic Opioids)"="RATESOpioidOverdoseDeathsBySyntheticOpioidsOtherThanMethadone",                          
+                                            "Rate of Opioid Overdose Deaths (Methadone)"="RATESOpioidOverdoseDeathsbyMethadone",                                                   
+                                            "Rate of Opioid Overdose Deaths (Herion)"="RATESOpioidOverdoseDeathsByHeroin",                                                        
+                                            "Counts of Opioid Related Inpatient Hospital Visits"="IPvisitCount",                                                                           
+                                            "Counts of Opioid Related Emergency Department Visits"="EDvisitCount"))
+               ))
            ),
            fluidRow(
              box(
                title = "State Policy Timeline",
-               width = 8,
                timevisOutput("timeline")
-             )
-           )
+             ))
   ),
-  tabPanel("Background")
-  
+  tabPanel("County",
+           fluidRow(
+             box(
+               title= "County Measure Heat Map",
+               width = 8,
+               leafletOutput(
+                 outputId = "county_map",
+                 height = 450)),
+             box(
+               width = 4,
+               title = "Controls",
+               radioButtons("county_measure", "Select a Measure to visualize",
+                            choices = list("Count of Overdose Deaths Related to Any Drug"="Count.of.Overdose.Death.Related.to.any.Drug.Type",
+                                           "Count of Court of Common Please Opioid Related Cases"="CourtofCommonPleasOpioidCases",
+                                           "Rate of Overdose Deaths Related to Any Drug "="Rate.of.Overdose.Death.Related.to.any.Drug.Type",
+                                           "Rate of Court of Common Please Opioid Related Cases"="CourtofCommonPleasOpioidRate"),
+                            selected = "Count.of.Overdose.Death.Related.to.any.Drug.Type") %>% helper(type = "inline",
+                                                                                                      title = "What do these variables mean?",
+                                                                                                      content = c("INFO HERE ABOUT COUNTY VARIABLES")),
+               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, animate=TRUE),
+               actionButton(
+                 inputId = "clearCountyHighlight",
+                 label = "Clear selections",
+                 style = "color: #fff; background-color: #D75453; border-color: #C73232"),
+               helpText("The states you have selected will populate below:"),
+               textOutput("county_list")
+             ),
+           ),
+           fluidRow(box(plotlyOutput('county_line_plot')),
+                    box(dataTableOutput("county_policy_table"))))
 )
 
-server <- function(input, output) {
+server <- function(input, output,session) {
+  
+  #--------------------------------------------- General Server --------------------------------------------
   
   #Tells Rshiny we have helper buttons
   observe_helpers()
   
+  
+  #--------------------------------------------- County Server --------------------------------------------
+  
+  output$county_policy_table <- renderDataTable(policy_frame,selection='none')
+  ### Observe selection on radio buttons to indicate slider update
+  observe({
+    radio_selected <- input$county_measure
+    selected <- county_measure_data %>% select(Year,radio_selected,TimeInterval)
+    selected <- drop_na(selected)
+    min_year <- min(selected$Year)
+    max_year <- max(selected$Year)
+    # Control the value, min, max, and step.
+    # Step size is 2 when input value is even; 1 when value is odd.
+    updateSliderInput(session, "county_year_slider",min = min_year, max = max_year,value=max_year)
+  })
+  
+  #filter data function based on the input and return dataframe
+  filter_county_spd_data <- reactive({
+    #get the year & measure from main data
+    test_data <- county_measure_data %>% filter(county_measure_data$Year == input$county_year_slider) %>% select(input$county_measure,County)
+    #make spatial dataframe & drop unnessescay columns & add our target measure to the df
+    spdf <- merge(county_shapes,test_data,by="County")
+    spd <- as_Spatial(st_geometry(spdf), IDs = as.character(1:nrow(spdf))) #make is spatial using sf package
+    df <- spdf #back to df & get rid of geometry
+    df$geometry <- NULL
+    df <- as.data.frame(df)
+    spd <- SpatialPolygonsDataFrame(spd, data = df)
+    return(spd)
+  })
+  
+  #Foundational heat map Function
+  foundational.county.map <- reactive({
+    #call filter
+    spd <- filter_county_spd_data()
+    #set palette based on input measure
+    pal <- colorNumeric("Blues", domain = county_measure_data[[input$county_measure]],na.color = "#808080")
+    #start leaflet object (using projections defined in the beginning)
+    leaflet(spd) %>%
+      #set view (allows us to see USA)
+      #adds legend based on input and palette
+      addLegend(pal = pal, values = county_measure_data[[input$county_measure]], opacity = 1, title = "Counts",position = "bottomright") %>% 
+      #actually adds the states, layerid refers to the hover info associated with each shape, in our case its state name
+      addPolygons(weight = 1,
+                  layerId = ~County,
+                  color = "#444444",
+                  opacity = 1,
+                  fillColor = ~pal(spd[[input$county_measure]]),
+                  fillOpacity = 0.7,
+                  smoothFactor = 0.5,
+                  label = ~paste(County, spd[[input$county_measure]]),
+                  labelOptions = labelOptions(direction = "auto"),
+                  highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = FALSE))
+  })
+  
+  #Render heat graph map
+  output$county_map <- renderLeaflet({foundational.county.map()})
+  
+  #Observe Click Event ----------------------------------------------------------------------------------------------------
+  # store the list of clicked polygons in a vector
+  county.click.list <- reactiveValues(ids = vector())
+  #use shinys "observe" to see what is clicked, and get the geometry for those lines so we can draw the blue highlights
+  observeEvent(input$county_map_shape_click, {
+    spd <- filter_county_spd_data()
+    click <- input$county_map_shape_click
+    county.click.list$ids <- c(county.click.list$ids, click$id)
+    output$county_list <- renderText(county.click.list$ids)
+    lines.of.interest <- spd[which(spd$County %in% county.click.list$ids), ]
+    
+    if(is.null(click$id)){
+      req( click$id )}
+    else if(!click$id %in% lines.of.interest@data$id ){
+      leafletProxy( mapId = "county_map" ) %>%
+        addPolylines(data = lines.of.interest,
+                     layerId = lines.of.interest@data$id,
+                     color = "#BDFFFF",
+                     weight = 5,
+                     opacity = 1)}
+    
+    filter_county_data <- reactive({
+      #filter data based on input year and then select measure
+      selected_county_data <-  county_measure_data %>% filter(County %in% county.click.list$ids)
+    })
+    
+    #filter the data for clicked states so we can acce
+    selected_county_data <- filter_county_data()
+    
+    #set line graph function
+    county.line.graph <- reactive({
+      y <- list(title = "Count")
+      plot_ly(selected_county_data, x = ~Year,y = selected_county_data[[input$county_measure]],color = ~County, type = 'scatter', mode = 'lines', name = ~County, connectgaps = FALSE) %>% 
+        layout(paper_bgcolor="#FFFFFF",plot_bgcolor="#FFFFFF",yaxis=y) %>% 
+        add_annotations(
+          x= 0.1,
+          y= 1,
+          xref = "paper",
+          yref = "paper",
+          text = "Note: Incomplete lines represent missing data.",
+          showarrow = F,
+          font= list(size=15)
+        )})
+    
+    output$county_line_plot <- renderPlotly({county.line.graph()})
+    
+  })  # End Click observation -----------------------------------------------------------------------------------------------------------
+  
+  # Observe clear highlight button & reset everything ----------------------------------------------------------------------------------------
+  observeEvent( input$clearCountyHighlight, {
+    #render blank line graph
+    blank.graph <- reactive({
+      plotly_empty(type = "scatter", mode = "markers") %>%
+        config(displayModeBar = FALSE) %>%
+        layout(title = list(text = "Click counties in order to see the line graph.", yref = "paper", y = 0.5))})
+    output$county_line_plot <- renderPlotly({blank.graph()})
+    output$county_map <- leaflet::renderLeaflet({
+      county.click.list$ids <- NULL
+      foundational.county.map()})})
+  
+  #---------------------------------------------County Server--------------------------------------------
+  
+  #---------------------------------------------State Comparison Server--------------------------------------------
+  
+  
   #filter data function based on the input and return dataframe
   filter_data <- reactive({
     #get the year & measure from main data
-    test_data <- HCUPKFFdata %>% filter(HCUPKFFdata$Year == input$dropdown_year) %>% select(input$measure,"name")
+    test_data <- state_opioid_data %>% filter(state_opioid_data$Year == input$dropdown_year) %>% select(input$measure,"name")
     #make spatial dataframe & drop unnessescay columns & add our target measure to the df
     spdf <- merge(spdf,test_data,by="name")
     spd <- as_Spatial(st_geometry(spdf), IDs = as.character(1:nrow(spdf))) #make is spatial using sf package
@@ -173,13 +347,13 @@ server <- function(input, output) {
     #call filter
     spd <- filter_data()
     #set palette based on input measure
-    pal <- colorNumeric("Blues", domain = HCUPKFFdata[[input$measure]],na.color = "#808080")
+    pal <- colorNumeric("Blues", domain = state_opioid_data[[input$measure]],na.color = "#808080")
     #start leaflet object (using projections defined in the beginning)
     leaflet(spd, options = leafletOptions(crs = epsg2163)) %>%
       #set view (allows us to see USA)
-      setView( lng= -95.712891,lat=37.09024, zoom=3) %>%
+      setView(lng= -95.712891,lat=37.09024, zoom=3) %>%
       #adds legend based on input and palette
-      addLegend(pal = pal, values = HCUPKFFdata[[input$measure]], opacity = 1, title = "Counts",position = "bottomright") %>% 
+      addLegend(pal = pal, values = state_opioid_data[[input$measure]], opacity = 1, title = "Counts",position = "bottomright") %>% 
       #actually adds the states, layerid refers to the hover info associated with each shape, in our case its state name
       addPolygons(weight = 1,
                   layerId = ~name,
@@ -195,22 +369,22 @@ server <- function(input, output) {
   })
   
   #Render heat graph map
-  output$map <- renderLeaflet({foundational.map()})
+  output$statemap <- renderLeaflet({foundational.map()})
   
   #Observe Click Event ----------------------------------------------------------------------------------------------------
   # store the list of clicked polygons in a vector
   click.list <- reactiveValues(ids = vector())
   #use shinys "observe" to see what is clicked, and get the geometry for those lines so we can draw the blue highlights
-  observeEvent(input$map_shape_click, {
+  observeEvent(input$statemap_shape_click, {
     spd <- filter_data()
-    click <- input$map_shape_click
+    click <- input$statemap_shape_click
     click.list$ids <- c(click.list$ids, click$id)
     output$list <- renderText(click.list$ids)
     lines.of.interest <- spd[which( spd$name %in% click.list$ids), ]
     #filter state function to get data for *clicked* states (we need this for plotting line graph)
     filter_state_data <- reactive({
       #filter data based on input year and then select measure
-      data <-  HCUPKFFdata %>% filter(name %in% click.list$ids)
+      data <-  state_opioid_data %>% filter(name %in% click.list$ids)
     })
     
     #filter the data for clicked states so we can acce
@@ -269,7 +443,7 @@ server <- function(input, output) {
             year = substr(date, nchar(date) - 3, nchar(date))
             annotation <- list(x = year,
                                y = max(st_data[[input$measure]],na.rm=TRUE)-(max(st_data[[input$measure]],na.rm=TRUE)/ncol(policy_data))*(i-1),
-                               text = paste0(row.names(policy_data)[input$policy_table_rows_selected],"(",colnames(policy_data)[i],")"),
+                               text = paste0(colnames(policy_data)[i]),
                                showarrow = FALSE)
             shape <- list(type='line',
                           x0=year,
@@ -296,7 +470,7 @@ server <- function(input, output) {
     if(is.null(click$id)){
       req( click$id )}
     else if(!click$id %in% lines.of.interest@data$id ){
-      leafletProxy( mapId = "map" ) %>%
+      leafletProxy( mapId = "statemap" ) %>%
         addPolylines(data = lines.of.interest,
                      layerId = lines.of.interest@data$id,
                      color = "#BDFFFF",
@@ -314,16 +488,47 @@ server <- function(input, output) {
     output$plot <- renderPlotly(blank.graph())
     policy_data <- data.table()
     output$policy_table <- DT::renderDataTable(policy_data, server = TRUE, selection='single')
-    output$map <- leaflet::renderLeaflet({
+    output$statemap <- leaflet::renderLeaflet({
       click.list$ids <- NULL
       foundational.map()})})
   
+  #---------------------------------------------State Comparison Server--------------------------------------------
   
+  #---------------------------------------------Single State Server--------------------------------------------
   
-  #SINGLE STATE PAGE ----------------------------------
-  output$timeline <- renderTimevis({
-    timevis(timeline_df(input$dropdown_input), showZoom = FALSE)
+  observeEvent(input$single_state_checkbox, {
+    #filter data function based on the input and return dataframe
+    filter_single_data <- reactive({
+      if (length(input$single_state_checkbox)==0) {
+        return(NA)
+      }
+      else{
+        #get the year & measure from main data
+        single_data <- state_opioid_data %>% filter(state_opioid_data$name == input$dropdown_state_input) %>% select(State,Year,input$single_state_checkbox)
+        melted <- single_data %>% pivot_longer(cols = input$single_state_checkbox, names_to="measure",values_to="value")
+        return(melted)
+      }
+    })
+    
+    single.line.graph <- reactive({
+      single_data <- filter_single_data()
+      if (is.na(single_data)){
+        ggplot()
+      }else{
+        ggplot(single_data, aes(x=Year,y=value))+geom_line()+facet_wrap(~measure,scales="free_y")
+      }
+    })
+    
+    output$single.state.plot <- renderPlot(single.line.graph())
+    
   })
+  output$timeline <- renderTimevis({
+    timevis(timeline_df(input$dropdown_state_input), showZoom = FALSE)
+  })
+  
+  
+  #---------------------------------------------Single State Server--------------------------------------------
+  
 }
 
 shinyApp(ui, server)
