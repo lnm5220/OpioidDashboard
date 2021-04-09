@@ -288,12 +288,9 @@ ui <- navbarPage(
                textOutput("county_list")
              ),
            ),
-           fluidRow(box(plotlyOutput('county_line_plot',status = "primary",
-               solidHeader = TRUE,)),
-                    box(dataTableOutput("county_policy_table",status = "primary",
-               solidHeader = TRUE,)),
-                    box(textOutput("policy_selected_county",status = "primary",
-               solidHeader = TRUE,))))
+           fluidRow(box(plotlyOutput('county_line_plot')),
+                    box(dataTableOutput("county_policy_table")),
+                    box(textOutput("policy_selected_county"))))
 )
 
 server <- function(input, output,session) {
