@@ -27,6 +27,8 @@ Policy <- fread("./PolicyDates.csv", quote="")
 #state_opioid_data <- fread("./data.csv", quote="")
 state_opioid_data <- fread("./OpioidData.CSV")
 spdf <- st_read("./spdf.shp")
+policy_info <- fread("./policyinfo.csv", quote = "")
+
 
 #LOAD IN COUNTY DATA
 pa_policy <- read.csv("./pa_policies.csv")
@@ -54,7 +56,7 @@ timeline_df <- function(state){
   temp <- tibble::rownames_to_column(as.data.frame(t(temp)), "content")
   colnames(temp)[2] <- "start"
   temp$start <- as.Date(temp$start, format = "%m/%d/%Y")
-  temp$id <- temp$content
+  temp$id <- c(1,2,3,4,5,6,7,8)
   temp <- na.omit(temp)
   return(temp)
 }
@@ -64,10 +66,52 @@ ui <- navbarPage(
   "OPADD",
   theme = shinytheme("flatly"),
   tabPanel("Multi-State Comparison",
+           tags$style(HTML("
+                    .box.box-solid.box-primary>.box-header {
+                    color:#FFFFFF;
+                    background:#2C3E50;
+                    }
+                    
+                    .box.box-solid.box-primary{
+                    border-bottom-color:#2C3E50;
+                    border-left-color:#2C3E50;
+                    border-right-color:#2C3E50;
+                    border-top-color:#2C3E50;
+                    background:#FFFFFF
+                    }
+                    
+                    .box.box-solid.box-warning>.box-header {
+                    color:#FFFFFF;
+                    background:#18BC9C;
+                    }
+                    
+                    .box.box-solid.box-warning{
+                    border-bottom-color:#18BC9C;
+                    border-left-color:#18BC9C;
+                    border-right-color:#18BC9C;
+                    border-top-color:#18BC9C;
+                    background:#FFFFFF
+                    }
+                    
+                    .box.box-solid.box-success>.box-header {
+                    color:#FFFFFF;
+                    background:#F39C12;
+                    }
+                    
+                    .box.box-solid.box-success{
+                    border-bottom-color:#F39C12;
+                    border-left-color:#F39C12;
+                    border-right-color:#F39C12;
+                    border-top-color:#F39C12;
+                    background:#FFFFFF
+                    }
+                    ")),
            useShinydashboard(),
            fluidRow(
              box(
                width=12,
+               status = "primary",
+               solidHeader = TRUE,
                title="Welcome to OPADD (Opioid Policy and Data Dashboard)",
                h5("Use this dashboard to explore data about the opioid epdimeic.
                          Customize the data shown on the map and then select states on the map to compare them.")                    )),
@@ -75,12 +119,16 @@ ui <- navbarPage(
              box(
                title= "Select a state on the map",
                width = 8,
+               status = "primary",
+               solidHeader = TRUE,
                leafletOutput(
                  outputId = "statemap",
                  height = 450)),
              box(
                width = 4,
                title = "Controls",
+               status = "warning",
+               solidHeader = TRUE,
                selectInput("measure", "Select a Measure to visualize",
                            choices = list(    "Opioid Overdose Deaths by Natural and Semisynthetic Opioid",             
                                               "Opioid Overdose Deaths by Synthetic Opioids",
@@ -115,9 +163,12 @@ ui <- navbarPage(
                                                                              "<b>Methadone Overdose Deaths</b> refers to overdose deaths caused by methadone, a synthetic opioid.",
                                                                              "<b>Heroin Overdose Deaths</b> refers to overdose deaths caused by heroin.",
                                                                              "<b>Synthetic Opioid Overdose Deaths</b> refers to overdose deaths caused by synthetic opioids, drugs made in laboratories to mimic the effect of natural opiates.")),
-               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00000000; border-top: 1px solid #00000000; border-bottom: 1px solid #00000000 ;}")),
-               tags$style(HTML(".js-irs-0 .irs-single { font-size: 110%; color: #000000; background: #ffffff }")),
-               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 110%; color: #000000; background: #808080}")),
+               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00006900; border-top: 1px solid #00003900; border-bottom: 1px solid #00003900 ;}")),
+               tags$style(HTML(".js-irs-0 .irs-single { font-size: 12px; font-weight: bold; color: #2C3E50; background: #FFFFFF }")),
+               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 12px; color: #FFFFFF; background: #2C3E50}")),
+               tags$style(HTML(".js-irs-0 .irs-grid-pol.small { display: none;}")),
+               tags$style(HTML(".js-irs-0 .irs-grid-text { font-size: 10px;}")),
+               tags$style(HTML(".js-irs-0 .irs-handle { background: #18BC9C;}")),
                sliderInput("dropdown_year", "Select Year",min = 2005, max = 2018, value = 2018, step=1, sep = "", animate=TRUE),
                actionButton(
                  inputId = "clearHighlight",
@@ -131,25 +182,34 @@ ui <- navbarPage(
              box(
                width=6,
                title="Line Graph",
+               status = "primary",
+               solidHeader = TRUE,
                plotlyOutput("plot")),
              box(width=6,
                  title="Policy",
+                 status = "success",
+                 solidHeader = TRUE,
                  dataTableOutput("policy_table"))
            )
   ),
   tabPanel("Single-State Analysis",
            fluidRow(
              box(
-               title = "State Metrics Analysis",
+               title = textOutput("ss.graph.title"),
                width = 8,
+               status = "primary",
+               solidHeader = TRUE,
                plotOutput("single.state.plot")
              ),
              fluidRow(
                box(
                  title = "Controls",
                  width = 4,
+                 status = "warning",
+                 solidHeader = TRUE,
                  selectInput("dropdown_state_input", selected = "Alabama","Select State", c("Select a State" = "", Policy$State)),
-                 selectizeInput("single_state_checkbox", "Select Metrics to compare (You may select up to 4)",selected="Opioid Overdose Deaths by Natural and Semisynthetic Opioid",multiple=TRUE, options = list(maxItems = 4),
+                 pickerInput("single_state_checkbox", "Select Metrics to compare (You may select up to 4)",selected="Opioid Overdose Deaths by Natural and Semisynthetic Opioid",multiple=TRUE,
+                             options = list("max-options" = 4, "max-options-text" = "A maximum of 4 metrics are able to be selected."),
                                 choices = list(    "Opioid Overdose Deaths by Natural and Semisynthetic Opioid",             
                                                    "Opioid Overdose Deaths by Synthetic Opioids",
                                                    "Opioid Overdose Deaths by Methadone",                                                        
@@ -179,22 +239,40 @@ ui <- navbarPage(
            ),
            fluidRow(
              box(
-               title = "State Policy Timeline",
+               title = textOutput("timeline.title"),
+               width = 8,
+               status = "success",
+               solidHeader = TRUE,
                timevisOutput("timeline")
              ),
-             box(title="Policy Information"))
+             box(
+               title="Policy Information",
+               width = 4,
+               status = "success",
+               solidHeader = TRUE,
+               htmlOutput("policy.message"),
+               htmlOutput("ss.policy.name"),
+               htmlOutput("ss.policy.date"),
+               htmlOutput("ss.policy.desc"),
+               htmlOutput("ss.date.desc")
+             )
+           )
   ),
   tabPanel("County",
            fluidRow(
              box(
                title= "County Measure Heat Map",
                width = 8,
+               status = "primary",
+               solidHeader = TRUE,
                leafletOutput(
                  outputId = "county_map",
                  height = 450)),
              box(
                width = 4,
                title = "Controls",
+               status = "warning",
+               solidHeader = TRUE,
                radioButtons("county_measure", "Select a Measure to visualize",
                             choices = list("Count of Overdose Deaths Related to Any Drug"="Count.of.Overdose.Death.Related.to.any.Drug.Type",
                                            "Count of Court of Common Please Opioid Related Cases"="CourtofCommonPleasOpioidCases",
@@ -203,21 +281,27 @@ ui <- navbarPage(
                             selected = "Count.of.Overdose.Death.Related.to.any.Drug.Type") %>% helper(type = "inline",
                                                                                                       title = "What do these variables mean?",
                                                                                                       content = c("INFO HERE ABOUT COUNTY VARIABLES")),
-               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00000000; border-top: 1px solid #00000000; border-bottom: 1px solid #00000000 ;}")),
-               tags$style(HTML(".js-irs-0 .irs-single { font-size: 110%; color: #000000; background: #ffffff }")),
-               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 110%; color: #000000; background: #808080}")),
-               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, animate=TRUE),
+               tags$style(HTML(".js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #00006900; border-top: 1px solid #00003900; border-bottom: 1px solid #00003900 ;}")),
+               tags$style(HTML(".js-irs-1 .irs-single { font-size: 12px; font-weight: bold; color: #2C3E50; background: #FFFFFF }")),
+               tags$style(HTML(".js-irs-1 .irs-min, .js-irs-1 .irs-max { font-size: 12px; color: #FFFFFF; background: #2C3E50}")),
+               tags$style(HTML(".js-irs-1 .irs-grid-pol.small { display: none;}")),
+               tags$style(HTML(".js-irs-1 .irs-grid-text { font-size: 10px;}")),
+               tags$style(HTML(".js-irs-1 .irs-handle { background: #18BC9C;}")),
+               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, sep = "", animate=TRUE),
                actionButton(
                  inputId = "clearCountyHighlight",
                  label = "Clear selections",
                  style = "color: #fff; background-color: #D75453; border-color: #C73232"),
-               helpText("The states you have selected will appear below:"),
+               helpText("The counties you have selected will appear below:"),
                textOutput("county_list")
              ),
            ),
-           fluidRow(box(plotlyOutput('county_line_plot')),
-                    box(dataTableOutput("county_policy_table")),
-                    box(textOutput("policy_selected_county"))))
+           fluidRow(box(plotlyOutput('county_line_plot',status = "primary",
+               solidHeader = TRUE,)),
+                    box(dataTableOutput("county_policy_table",status = "primary",
+               solidHeader = TRUE,)),
+                    box(textOutput("policy_selected_county",status = "primary",
+               solidHeader = TRUE,))))
 )
 
 server <- function(input, output,session) {
@@ -546,6 +630,8 @@ server <- function(input, output,session) {
   #---------------------------------------------State Comparison Server--------------------------------------------
   
   #---------------------------------------------Single State Server--------------------------------------------
+  output$ss.graph.title <- renderText({paste(input$dropdown_state_input, " State Metrics Analysis")})
+  output$timeline.title <- renderText({paste(input$dropdown_state_input, " State Policy Timeline")})
   
   observeEvent(input$single_state_checkbox, {
     #filter data function based on the input and return dataframe
@@ -578,6 +664,35 @@ server <- function(input, output,session) {
     timevis(timeline_df(input$dropdown_state_input),showZoom = FALSE)
   })
   
+  #Policy Info Box output based on timeline selections, reactive functions needed for when no policy is selected
+  message <- reactive({
+    if (length(input$timeline_selected) == 0) {
+      return(paste(h4("Select a Policy from the Timeline to find out more.")))
+    } else{
+      return(NULL)
+    }
+  })
+  policy_name <- reactive({
+    req(input$timeline_selected)
+    return(paste(h4("Selected Policy Date: "), filter(input$timeline_data, id == input$timeline_selected)$content))
+  })
+  policy_date <- reactive({
+    req(input$timeline_selected)
+    return(paste("Took place in ", format(filter(timeline_df(input$dropdown_state_input), id == input$timeline_selected)$start, "%B %Y")))
+  })
+  policy_desc <- reactive({
+    req(input$timeline_selected)
+    return(paste(h4("About the Policy:"), filter(policy_info, id == input$timeline_selected)$policy.desc))
+  })
+  date_desc <- reactive({
+    req(input$timeline_selected)
+    return(paste(h4("What does this date mean?"), filter(policy_info, id == input$timeline_selected)$date.desc))
+  })
+  output$policy.message <- renderText({message()})
+  output$ss.policy.name <- renderText({policy_name()})
+  output$ss.policy.date <- renderText({policy_date()})
+  output$ss.policy.desc <- renderText({policy_desc()})
+  output$ss.date.desc <- renderText({date_desc()})
   
   #---------------------------------------------Single State Server--------------------------------------------
   
