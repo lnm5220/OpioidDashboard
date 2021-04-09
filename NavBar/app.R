@@ -32,7 +32,7 @@ spdf <- st_read("./spdf.shp")
 pa_policy <- read.csv("./pa_policies.csv")
 #eventually fix these small problems so we can just load in 2 datasets
 policy_frame <- data.frame(pa_policy)
-row.names(policy_frame) <- c('PDMP.Enactment',"PDMP.ContingentonFunding","PDMP.Electronic","PDMP.UserAccess","PillMill","MedicaidExpansion.Implemented","NaloxoneAccess")
+row.names(policy_frame) <- c('PDMP Enactment Date',"PDMP Legislation Date if Contingenton on Funding","PDMP Electronic Access Date","PDMP Modern System Operational","Pill Mill Bill Enactment Date","Medicaid Expansion Implementation Date","Naloxone Access Implementation Date")
 county_measure_data <- fread("./AnnualCounty.csv")
 
 county_shapes <- st_read("./PaCounty2020_12.shp")
@@ -82,32 +82,32 @@ ui <- navbarPage(
                width = 4,
                title = "Controls",
                selectInput("measure", "Select a Measure to visualize",
-                           choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioid"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
-                                          "Opioid Overdose Deaths by Synthetic Opioids"="Opioid.Overdose.Deaths.by.Synthetic.Opioids..other.than.Methadone..e.g..fentanyl..tramadol.",
-                                          "Opioid Overdose Deaths by Methadone"="Opioid.Overdose.Deaths.by.Methadone",                                                        
-                                          "Opioid Overdose Deaths by Heroin"="Opioid.Overdose.Deaths.by.Heroin",                                                          
-                                          "All Opioid Overdose Deaths"="Opioid.Overdose.Deaths",                                                                    
-                                          "All Drug Overdose Deaths"="All.Drug.Overdose.Deaths",                                                    
-                                          "Opioid Overdose Deaths as Perctange of all Overdose Deaths"="Opioid.Overdose.Deaths.as.a.Percent.of.All.Drug.Overdose.Deaths",                   
-                                          "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)"= "Opioid.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",
-                                          "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)"="All.Drug.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",                        
-                                          "Rate of Opioid Related Inpatient Hospital Visits"="IPRate",                                                                                     
-                                          "Rate of Ppioid Related Emergency Department Visits"="EDRate",                                                                                  
-                                          "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)"="RATESOpioidOverdoseDeathsByNaturalAndSemisyntheticOpioid",                             
-                                          "Rate of Opioid Overdose Deaths (Synthetic Opioids)"="RATESOpioidOverdoseDeathsBySyntheticOpioidsOtherThanMethadone",                          
-                                          "Rate of Opioid Overdose Deaths (Methadone)"="RATESOpioidOverdoseDeathsbyMethadone",                                                   
-                                          "Rate of Opioid Overdose Deaths (Herion)"="RATESOpioidOverdoseDeathsByHeroin",                                                        
-                                          "Counts of Opioid Related Inpatient Hospital Visits"="IPvisitCount",                                                                           
-                                          "Counts of Opioid Related Emergency Department Visits"="EDvisitCount",
-                                          "Opioid Prescription Rate Per 100 population"="OpioidPrescriptionRatePer100population",                      
-                                          "Number of Crime Incident Related to Any Drug Type"="NumberofCrimeIncidentRelatedtoAnyDrugType",                          
-                                          "Number of Crime Incident Related to Heroin"="NumberofCrimeIncidentRelatedtoHeroin",                             
-                                          "Number of Crime Incident Related to Narcotics"="NumberofCrimeIncidentRelatedtoNarcotics",                       
-                                          "Number of Crime Incident Related to All Types of Opioid"="NumberofCrimeIncidentRelatedtoAllTypesofOpioid",                    
-                                          "Number of Crime Incident Related to Cocaine"="NumberofCrimeIncidentRelatedtoCocaine",                         
-                                          "Number of Crime Incident Related to Heroin Morphine And Opium"="NumberofCrimeIncidentRelatedtoHeroinMorphineAndOpium",               
-                                          "Number of Crime Incident Related to Other Opioid"="NumberofCrimeIncidentRelatedtoOtherOpioid"),
-                           selected = "IPvisitCount") %>% helper(type = "inline",
+                           choices = list(    "Opioid Overdose Deaths by Natural and Semisynthetic Opioid",             
+                                              "Opioid Overdose Deaths by Synthetic Opioids",
+                                              "Opioid Overdose Deaths by Methadone",                                                        
+                                              "Opioid Overdose Deaths by Heroin",                                                          
+                                              "All Opioid Overdose Deaths",                                                                    
+                                              "All Drug Overdose Deaths",                                                    
+                                              "Opioid Overdose Deaths as Perctange of all Overdose Deaths",                   
+                                              "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)",
+                                              "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)",                        
+                                              "Rate of Opioid Related Inpatient Hospital Visits",                                                                                     
+                                              "Rate of Ppioid Related Emergency Department Visits",                                                                                  
+                                              "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)",                             
+                                              "Rate of Opioid Overdose Deaths (Synthetic Opioids)",                          
+                                              "Rate of Opioid Overdose Deaths (Methadone)",                                                   
+                                              "Rate of Opioid Overdose Deaths (Herion)",                                                        
+                                              "Counts of Opioid Related Inpatient Hospital Visits",                                                                           
+                                              "Counts of Opioid Related Emergency Department Visits",
+                                              "Opioid Prescription Rate Per 100 population",                      
+                                              "Number of Crime Incident Related to Any Drug Type",                          
+                                              "Number of Crime Incident Related to Heroin",                             
+                                              "Number of Crime Incident Related to Narcotics",                       
+                                              "Number of Crime Incident Related to All Types of Opioid",                    
+                                              "Number of Crime Incident Related to Cocaine",                         
+                                              "Number of Crime Incident Related to Heroin Morphine And Opium",               
+                                              "Number of Crime Incident Related to Other Opioid"),
+                           selected = "Opioid Overdose Deaths by Natural and Semisynthetic Opioid") %>% helper(type = "inline",
                                                                  title = "What do these variables mean?",
                                                                  content = c("<b>Inpatient Opioid Related Hospitalizations</b> refers to the number of inpatient hospital stays that related to the use of an opioid.",
                                                                              "<b>Emergency Department Opioid Related Hospitalizations</b> refers to the number of emergency department visits that were related to the use of an opioid.",
@@ -149,32 +149,32 @@ ui <- navbarPage(
                  title = "Controls",
                  width = 4,
                  selectInput("dropdown_state_input", selected = "Alabama","Select State", c("Select a State" = "", Policy$State)),
-                 selectizeInput("single_state_checkbox", "Select Metrics to compare on Line Graph (You may select up to 4)",selected="Opioid.Overdose.Deaths.by.Heroin",multiple=TRUE, options = list(maxItems = 4),
-                             choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioid"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
-                                            "Opioid Overdose Deaths by Synthetic Opioids"="Opioid.Overdose.Deaths.by.Synthetic.Opioids..other.than.Methadone..e.g..fentanyl..tramadol.",
-                                            "Opioid Overdose Deaths by Methadone"="Opioid.Overdose.Deaths.by.Methadone",                                                        
-                                            "Opioid Overdose Deaths by Heroin"="Opioid.Overdose.Deaths.by.Heroin",                                                          
-                                            "All Opioid Overdose Deaths"="Opioid.Overdose.Deaths",                                                                    
-                                            "All Drug Overdose Deaths"="All.Drug.Overdose.Deaths",                                                    
-                                            "Opioid Overdose Deaths as Percentage of all Overdose deaths"="Opioid.Overdose.Deaths.as.a.Percent.of.All.Drug.Overdose.Deaths",                   
-                                            "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)"= "Opioid.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",
-                                            "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)"="All.Drug.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",                        
-                                            "Rate of Opioid Related Inpatient Hospital Visits"="IPRate",                                                                                     
-                                            "Rate of Opioid related Emergency Department Visits"="EDRate",                                                                                  
-                                            "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)"="RATESOpioidOverdoseDeathsByNaturalAndSemisyntheticOpioid",                             
-                                            "Rate of Opioid Overdose Deaths (Synthetic Opioids)"="RATESOpioidOverdoseDeathsBySyntheticOpioidsOtherThanMethadone",                          
-                                            "Rate of Opioid Overdose Deaths (Methadone)"="RATESOpioidOverdoseDeathsbyMethadone",                                                   
-                                            "Rate of Opioid Overdose Deaths (Herion)"="RATESOpioidOverdoseDeathsByHeroin",                                                        
-                                            "Counts of Opioid Related Inpatient Hospital Visits"="IPvisitCount",                                                                           
-                                            "Counts of Opioid Related Emergency Department Visits"="EDvisitCount",
-                                            "Opioid Prescription Rate Per 100 population"="OpioidPrescriptionRatePer100population",                      
-                                            "Number of Crime Incident Related to Any Drug Type"="NumberofCrimeIncidentRelatedtoAnyDrugType",                          
-                                            "Number of Crime Incident Related to Heroin"="NumberofCrimeIncidentRelatedtoHeroin",                             
-                                            "Number of Crime Incident Related to Narcotics"="NumberofCrimeIncidentRelatedtoNarcotics",                       
-                                            "Number of Crime Incident Related to All Types of Opioid"="NumberofCrimeIncidentRelatedtoAllTypesofOpioid",                    
-                                            "Number of Crime Incident Related to Cocaine"="NumberofCrimeIncidentRelatedtoCocaine",                         
-                                            "Number of Crime Incident Related to Heroin Morphine And Opium"="NumberofCrimeIncidentRelatedtoHeroinMorphineAndOpium",               
-                                            "Number of Crime Incident Related to Other Opioid"="NumberofCrimeIncidentRelatedtoOtherOpioid"))
+                 selectizeInput("single_state_checkbox", "Select Metrics to compare (You may select up to 4)",selected="Opioid Overdose Deaths by Natural and Semisynthetic Opioid",multiple=TRUE, options = list(maxItems = 4),
+                                choices = list(    "Opioid Overdose Deaths by Natural and Semisynthetic Opioid",             
+                                                   "Opioid Overdose Deaths by Synthetic Opioids",
+                                                   "Opioid Overdose Deaths by Methadone",                                                        
+                                                   "Opioid Overdose Deaths by Heroin",                                                          
+                                                   "All Opioid Overdose Deaths",                                                                    
+                                                   "All Drug Overdose Deaths",                                                    
+                                                   "Opioid Overdose Deaths as Perctange of all Overdose Deaths",                   
+                                                   "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)",
+                                                   "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)",                        
+                                                   "Rate of Opioid Related Inpatient Hospital Visits",                                                                                     
+                                                   "Rate of Ppioid Related Emergency Department Visits",                                                                                  
+                                                   "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)",                             
+                                                   "Rate of Opioid Overdose Deaths (Synthetic Opioids)",                          
+                                                   "Rate of Opioid Overdose Deaths (Methadone)",                                                   
+                                                   "Rate of Opioid Overdose Deaths (Herion)",                                                        
+                                                   "Counts of Opioid Related Inpatient Hospital Visits",                                                                           
+                                                   "Counts of Opioid Related Emergency Department Visits",
+                                                   "Opioid Prescription Rate Per 100 population",                      
+                                                   "Number of Crime Incident Related to Any Drug Type",                          
+                                                   "Number of Crime Incident Related to Heroin",                             
+                                                   "Number of Crime Incident Related to Narcotics",                       
+                                                   "Number of Crime Incident Related to All Types of Opioid",                    
+                                                   "Number of Crime Incident Related to Cocaine",                         
+                                                   "Number of Crime Incident Related to Heroin Morphine And Opium",               
+                                                   "Number of Crime Incident Related to Other Opioid"))
                ))
            ),
            fluidRow(
@@ -216,7 +216,8 @@ ui <- navbarPage(
              ),
            ),
            fluidRow(box(plotlyOutput('county_line_plot')),
-                    box(dataTableOutput("county_policy_table"))))
+                    box(dataTableOutput("county_policy_table")),
+                    box(textOutput("policy_selected_county"))))
 )
 
 server <- function(input, output,session) {
@@ -229,7 +230,7 @@ server <- function(input, output,session) {
   
   #--------------------------------------------- County Server --------------------------------------------
   
-  output$county_policy_table <- renderDataTable(policy_frame,selection='none')
+  output$county_policy_table <- renderDataTable(policy_frame,selection='single')
   ### Observe selection on radio buttons to indicate slider update
   observe({
     radio_selected <- input$county_measure
@@ -241,7 +242,7 @@ server <- function(input, output,session) {
     # Step size is 2 when input value is even; 1 when value is odd.
     updateSliderInput(session, "county_year_slider",min = min_year, max = max_year,value=max_year)
   })
-  
+
   #filter data function based on the input and return dataframe
   filter_county_spd_data <- reactive({
     #get the year & measure from main data
@@ -329,6 +330,35 @@ server <- function(input, output,session) {
         )})
     
     output$county_line_plot <- renderPlotly({county.line.graph()})
+    
+    observeEvent(input$county_policy_table_rows_selected,ignoreNULL = FALSE,{
+      if (is.null(input$county_policy_table_rows_selected)){
+        output$county_line_plot <- renderPlotly({county.line.graph()})}
+      else if(is.null(county.click.list)) {
+        output$county_line_plot <- renderPlotly({blank.graph()})}
+      else{
+        output$county_line_plot <- renderPlotly({annotated.county.line.graph()})}
+    })
+    
+    annotated.county.line.graph <- reactive({
+      if (is.na(pa_policy[input$county_policy_table_rows_selected,'date']))
+      {ann_text <-"PA implementation date not available."
+      where_to <- 2015
+      shape = list()
+      }else{
+        year_policy = pa_policy[input$county_policy_table_rows_selected,'date']
+        where_to = substr(year_policy, nchar(year_policy) - 3, nchar(year_policy))
+        ann_text = paste0("Implemented in ", where_to)
+        shape <- list(type='line',
+                      x0=where_to,
+                      x1=where_to,
+                      y0=min(selected_county_data[[input$county_measure]],na.rm=TRUE),
+                      y1=max(selected_county_data[[input$county_measure]],na.rm=TRUE),
+                      line=list(dash='dot', width=1))}
+        y <- list(title = "Clicked a policy")
+        plot_ly(selected_county_data, x = ~Year,y = selected_county_data[[input$county_measure]],color = ~County, type = 'scatter', mode = 'lines', name = ~County, connectgaps = FALSE) %>% 
+          layout(paper_bgcolor="#FFFFFF",plot_bgcolor="#FFFFFF",yaxis=y,shapes=shape) %>%
+          add_annotations(x=where_to,y=mean(selected_county_data[[input$county_measure]],na.rm=TRUE),text=ann_text,showarrow=FALSE)})
     
   })  # End Click observation -----------------------------------------------------------------------------------------------------------
   
@@ -536,14 +566,14 @@ server <- function(input, output,session) {
       if (is.na(single_data)){
         ggplot()
       }else{
-        ggplot(single_data, aes(x=Year,y=value))+geom_line()+facet_wrap(~measure,scales="free_y")
+        ggplot(single_data,aes(x=Year,y=value))+geom_line()+facet_wrap(~measure,scales="free_y") + theme_bw()
       }
     })
     
     output$single.state.plot <- renderPlot(single.line.graph())
     
   })
-
+  
   output$timeline <- renderTimevis({
     timevis(timeline_df(input$dropdown_state_input),showZoom = FALSE)
   })
