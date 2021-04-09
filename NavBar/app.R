@@ -54,6 +54,7 @@ timeline_df <- function(state){
   temp <- tibble::rownames_to_column(as.data.frame(t(temp)), "content")
   colnames(temp)[2] <- "start"
   temp$start <- as.Date(temp$start, format = "%m/%d/%Y")
+  temp$id <- temp$content
   temp <- na.omit(temp)
   return(temp)
 }
@@ -64,48 +65,6 @@ ui <- navbarPage(
   theme = shinytheme("flatly"),
   tabPanel("Multi-State Comparison",
            useShinydashboard(),
-           #HTML Tags to enable box header colors for three different status types:
-           tags$style(HTML("
-
-                    .box.box-solid.box-primary>.box-header {
-                    color:#FFFFFF;
-                    background:#2C3E50;
-                    }
-                    
-                    .box.box-solid.box-primary{
-                    border-bottom-color:#2C3E50;
-                    border-left-color:#2C3E50;
-                    border-right-color:#2C3E50;
-                    border-top-color:#2C3E50;
-                    background:#FFFFFF
-                    }
-                    
-                    .box.box-solid.box-warning>.box-header {
-                    color:#FFFFFF;
-                    background:#18BC9C;
-                    }
-                    
-                    .box.box-solid.box-warning{
-                    border-bottom-color:#18BC9C;
-                    border-left-color:#18BC9C;
-                    border-right-color:#18BC9C;
-                    border-top-color:#18BC9C;
-                    background:#FFFFFF
-                    }
-                    
-                    .box.box-solid.box-success>.box-header {
-                    color:#FFFFFF;
-                    background:#F39C12;
-                    }
-                    
-                    .box.box-solid.box-success{
-                    border-bottom-color:#F39C12;
-                    border-left-color:#F39C12;
-                    border-right-color:#F39C12;
-                    border-top-color:#F39C12;
-                    background:#FFFFFF
-                    }
-                    ")),
            fluidRow(
              box(
                width=12,
@@ -123,7 +82,7 @@ ui <- navbarPage(
                width = 4,
                title = "Controls",
                selectInput("measure", "Select a Measure to visualize",
-                           choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioids"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
+                           choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioid"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
                                           "Opioid Overdose Deaths by Synthetic Opioids"="Opioid.Overdose.Deaths.by.Synthetic.Opioids..other.than.Methadone..e.g..fentanyl..tramadol.",
                                           "Opioid Overdose Deaths by Methadone"="Opioid.Overdose.Deaths.by.Methadone",                                                        
                                           "Opioid Overdose Deaths by Heroin"="Opioid.Overdose.Deaths.by.Heroin",                                                          
@@ -133,13 +92,21 @@ ui <- navbarPage(
                                           "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)"= "Opioid.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",
                                           "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)"="All.Drug.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",                        
                                           "Rate of Opioid Related Inpatient Hospital Visits"="IPRate",                                                                                     
-                                          "Rate of Opioid Related Emergency Department Visits"="EDRate",                                                                                  
+                                          "Rate of Ppioid Related Emergency Department Visits"="EDRate",                                                                                  
                                           "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)"="RATESOpioidOverdoseDeathsByNaturalAndSemisyntheticOpioid",                             
                                           "Rate of Opioid Overdose Deaths (Synthetic Opioids)"="RATESOpioidOverdoseDeathsBySyntheticOpioidsOtherThanMethadone",                          
                                           "Rate of Opioid Overdose Deaths (Methadone)"="RATESOpioidOverdoseDeathsbyMethadone",                                                   
                                           "Rate of Opioid Overdose Deaths (Herion)"="RATESOpioidOverdoseDeathsByHeroin",                                                        
                                           "Counts of Opioid Related Inpatient Hospital Visits"="IPvisitCount",                                                                           
-                                          "Counts of Opioid Related Emergency Department Visits"="EDvisitCount"),
+                                          "Counts of Opioid Related Emergency Department Visits"="EDvisitCount",
+                                          "Opioid Prescription Rate Per 100 population"="OpioidPrescriptionRatePer100population",                      
+                                          "Number of Crime Incident Related to Any Drug Type"="NumberofCrimeIncidentRelatedtoAnyDrugType",                          
+                                          "Number of Crime Incident Related to Heroin"="NumberofCrimeIncidentRelatedtoHeroin",                             
+                                          "Number of Crime Incident Related to Narcotics"="NumberofCrimeIncidentRelatedtoNarcotics",                       
+                                          "Number of Crime Incident Related to All Types of Opioid"="NumberofCrimeIncidentRelatedtoAllTypesofOpioid",                    
+                                          "Number of Crime Incident Related to Cocaine"="NumberofCrimeIncidentRelatedtoCocaine",                         
+                                          "Number of Crime Incident Related to Heroin Morphine And Opium"="NumberofCrimeIncidentRelatedtoHeroinMorphineAndOpium",               
+                                          "Number of Crime Incident Related to Other Opioid"="NumberofCrimeIncidentRelatedtoOtherOpioid"),
                            selected = "IPvisitCount") %>% helper(type = "inline",
                                                                  title = "What do these variables mean?",
                                                                  content = c("<b>Inpatient Opioid Related Hospitalizations</b> refers to the number of inpatient hospital stays that related to the use of an opioid.",
@@ -148,18 +115,15 @@ ui <- navbarPage(
                                                                              "<b>Methadone Overdose Deaths</b> refers to overdose deaths caused by methadone, a synthetic opioid.",
                                                                              "<b>Heroin Overdose Deaths</b> refers to overdose deaths caused by heroin.",
                                                                              "<b>Synthetic Opioid Overdose Deaths</b> refers to overdose deaths caused by synthetic opioids, drugs made in laboratories to mimic the effect of natural opiates.")),
-               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00006900; border-top: 1px solid #00003900; border-bottom: 1px solid #00003900 ;}")),
-               tags$style(HTML(".js-irs-0 .irs-single { font-size: 12px; font-weight: bold; color: #2C3E50; background: #FFFFFF }")),
-               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 12px; color: #FFFFFF; background: #2C3E50}")),
-               tags$style(HTML(".js-irs-0 .irs-grid-pol.small { display: none;}")),
-               tags$style(HTML(".js-irs-0 .irs-grid-text { font-size: 10px;}")),
-               tags$style(HTML(".js-irs-0 .irs-handle { background: #18BC9C;}")),
+               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00000000; border-top: 1px solid #00000000; border-bottom: 1px solid #00000000 ;}")),
+               tags$style(HTML(".js-irs-0 .irs-single { font-size: 110%; color: #000000; background: #ffffff }")),
+               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 110%; color: #000000; background: #808080}")),
                sliderInput("dropdown_year", "Select Year",min = 2005, max = 2018, value = 2018, step=1, sep = "", animate=TRUE),
                actionButton(
                  inputId = "clearHighlight",
                  label = "Clear selections",
                  style = "color: #fff; background-color: #D75453; border-color: #C73232"),
-               helpText("The states you have selected will populate below:"),
+               helpText("The states you have selected will appear below:"),
                textOutput("list")
              ),
            ),
@@ -185,31 +149,40 @@ ui <- navbarPage(
                  title = "Controls",
                  width = 4,
                  selectInput("dropdown_state_input", selected = "Alabama","Select State", c("Select a State" = "", Policy$State)),
-                 selectInput("single_state_checkbox", "Select Metrics to compare on Line Graph",selected="Opioid.Overdose.Deaths.by.Heroin",multiple=TRUE,
-                             choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioids"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
+                 selectizeInput("single_state_checkbox", "Select Metrics to compare on Line Graph (You may select up to 4)",selected="Opioid.Overdose.Deaths.by.Heroin",multiple=TRUE, options = list(maxItems = 4),
+                             choices = list("Opioid Overdose Deaths by Natural and Semisynthetic Opioid"="Opioid.Overdose.Deaths.by.natural.and.semisynthetic.opioid..e.g..oxycodone.",              
                                             "Opioid Overdose Deaths by Synthetic Opioids"="Opioid.Overdose.Deaths.by.Synthetic.Opioids..other.than.Methadone..e.g..fentanyl..tramadol.",
                                             "Opioid Overdose Deaths by Methadone"="Opioid.Overdose.Deaths.by.Methadone",                                                        
                                             "Opioid Overdose Deaths by Heroin"="Opioid.Overdose.Deaths.by.Heroin",                                                          
                                             "All Opioid Overdose Deaths"="Opioid.Overdose.Deaths",                                                                    
                                             "All Drug Overdose Deaths"="All.Drug.Overdose.Deaths",                                                    
-                                            "Opioid Overdose Deaths as Perctange of all Overdose Deaths"="Opioid.Overdose.Deaths.as.a.Percent.of.All.Drug.Overdose.Deaths",                   
+                                            "Opioid Overdose Deaths as Percentage of all Overdose deaths"="Opioid.Overdose.Deaths.as.a.Percent.of.All.Drug.Overdose.Deaths",                   
                                             "Opioid Overdose Death Rate Per 100,000 (Age Adjusted)"= "Opioid.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",
                                             "All Drug Overdose Death Rate Per 100,00 (Age Adjusted)"="All.Drug.Overdose.Death.Rate.per.100.000.Population..Age.Adjusted.",                        
-                                            "Rate of Opioid Related In Patient Hospital Visits"="IPRate",                                                                                     
-                                            "Rate of Opioid Related Emergency Department Visits"="EDRate",                                                                                  
+                                            "Rate of Opioid Related Inpatient Hospital Visits"="IPRate",                                                                                     
+                                            "Rate of Opioid related Emergency Department Visits"="EDRate",                                                                                  
                                             "Rate of Opioid Overdose Deaths (Natural & Semisynthetic)"="RATESOpioidOverdoseDeathsByNaturalAndSemisyntheticOpioid",                             
                                             "Rate of Opioid Overdose Deaths (Synthetic Opioids)"="RATESOpioidOverdoseDeathsBySyntheticOpioidsOtherThanMethadone",                          
                                             "Rate of Opioid Overdose Deaths (Methadone)"="RATESOpioidOverdoseDeathsbyMethadone",                                                   
                                             "Rate of Opioid Overdose Deaths (Herion)"="RATESOpioidOverdoseDeathsByHeroin",                                                        
                                             "Counts of Opioid Related Inpatient Hospital Visits"="IPvisitCount",                                                                           
-                                            "Counts of Opioid Related Emergency Department Visits"="EDvisitCount"))
+                                            "Counts of Opioid Related Emergency Department Visits"="EDvisitCount",
+                                            "Opioid Prescription Rate Per 100 population"="OpioidPrescriptionRatePer100population",                      
+                                            "Number of Crime Incident Related to Any Drug Type"="NumberofCrimeIncidentRelatedtoAnyDrugType",                          
+                                            "Number of Crime Incident Related to Heroin"="NumberofCrimeIncidentRelatedtoHeroin",                             
+                                            "Number of Crime Incident Related to Narcotics"="NumberofCrimeIncidentRelatedtoNarcotics",                       
+                                            "Number of Crime Incident Related to All Types of Opioid"="NumberofCrimeIncidentRelatedtoAllTypesofOpioid",                    
+                                            "Number of Crime Incident Related to Cocaine"="NumberofCrimeIncidentRelatedtoCocaine",                         
+                                            "Number of Crime Incident Related to Heroin Morphine And Opium"="NumberofCrimeIncidentRelatedtoHeroinMorphineAndOpium",               
+                                            "Number of Crime Incident Related to Other Opioid"="NumberofCrimeIncidentRelatedtoOtherOpioid"))
                ))
            ),
            fluidRow(
              box(
                title = "State Policy Timeline",
                timevisOutput("timeline")
-             ))
+             ),
+             box(title="Policy Information"))
   ),
   tabPanel("County",
            fluidRow(
@@ -230,18 +203,15 @@ ui <- navbarPage(
                             selected = "Count.of.Overdose.Death.Related.to.any.Drug.Type") %>% helper(type = "inline",
                                                                                                       title = "What do these variables mean?",
                                                                                                       content = c("INFO HERE ABOUT COUNTY VARIABLES")),
-               tags$style(HTML(".js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #00006900; border-top: 1px solid #00003900; border-bottom: 1px solid #00003900 ;}")),
-               tags$style(HTML(".js-irs-1 .irs-single { font-size: 12px; font-weight: bold; color: #2C3E50; background: #FFFFFF }")),
-               tags$style(HTML(".js-irs-1 .irs-min, .js-irs-1 .irs-max { font-size: 12px; color: #FFFFFF; background: #2C3E50}")),
-               tags$style(HTML(".js-irs-1 .irs-grid-pol.small { display: none;}")),
-               tags$style(HTML(".js-irs-1 .irs-grid-text { font-size: 10px;}")),
-               tags$style(HTML(".js-irs-1 .irs-handle { background: #18BC9C;}")),
-               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, sep = "", animate=TRUE),
+               tags$style(HTML(".js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #00000000; border-top: 1px solid #00000000; border-bottom: 1px solid #00000000 ;}")),
+               tags$style(HTML(".js-irs-0 .irs-single { font-size: 110%; color: #000000; background: #ffffff }")),
+               tags$style(HTML(".js-irs-0 .irs-min, .js-irs-0 .irs-max { font-size: 110%; color: #000000; background: #808080}")),
+               sliderInput("county_year_slider", "Select Year",min = 2012, max = 2020, value = 2020, step=1, animate=TRUE),
                actionButton(
                  inputId = "clearCountyHighlight",
                  label = "Clear selections",
                  style = "color: #fff; background-color: #D75453; border-color: #C73232"),
-               helpText("The states you have selected will populate below:"),
+               helpText("The states you have selected will appear below:"),
                textOutput("county_list")
              ),
            ),
@@ -573,8 +543,9 @@ server <- function(input, output,session) {
     output$single.state.plot <- renderPlot(single.line.graph())
     
   })
+
   output$timeline <- renderTimevis({
-    timevis(timeline_df(input$dropdown_state_input), showZoom = FALSE)
+    timevis(timeline_df(input$dropdown_state_input),showZoom = FALSE)
   })
   
   
