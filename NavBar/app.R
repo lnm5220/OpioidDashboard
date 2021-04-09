@@ -51,15 +51,7 @@ epsg2163 <- leafletCRS(
   proj4def = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs",
   resolutions = 2^(16:7))
 
-timeline_df <- function(state){
-  temp <- filter(Policy, Policy$State == state)
-  temp <- tibble::rownames_to_column(as.data.frame(t(temp)), "content")
-  colnames(temp)[2] <- "start"
-  temp$start <- as.Date(temp$start, format = "%m/%d/%Y")
-  temp$id <- c(1,2,3,4,5,6,7,8)
-  temp <- na.omit(temp)
-  return(temp)
-}
+
 
 
 ui <- navbarPage(
@@ -660,8 +652,18 @@ server <- function(input, output,session) {
     
   })
   
+  timeline_react <- reactive({
+    temp <- filter(Policy, Policy$State == input$dropdown_state_input)
+    temp <- tibble::rownames_to_column(as.data.frame(t(temp)), "content")
+    colnames(temp)[2] <- "start"
+    temp$start <- as.Date(temp$start, format = "%m/%d/%Y")
+    temp$id <- c(1,2,3,4,5,6,7,8)
+    temp <- na.omit(temp)
+    return(temp)
+  })
+  
   output$timeline <- renderTimevis({
-    timevis(timeline_df(input$dropdown_state_input),showZoom = FALSE)
+    timevis(timeline_react(),showZoom = FALSE)
   })
   
   #Policy Info Box output based on timeline selections, reactive functions needed for when no policy is selected
@@ -674,11 +676,11 @@ server <- function(input, output,session) {
   })
   policy_name <- reactive({
     req(input$timeline_selected)
-    return(paste(h4("Selected Policy Date: "), filter(input$timeline_data, id == input$timeline_selected)$content))
+    return(paste(h4("Selected Policy Date: "), filter(policy_info, id == input$timeline_selected)$name))
   })
   policy_date <- reactive({
     req(input$timeline_selected)
-    return(paste("Took place in ", format(filter(timeline_df(input$dropdown_state_input), id == input$timeline_selected)$start, "%B %Y")))
+    return(paste("Took place in ", format(filter(timeline_react(), id == input$timeline_selected)$start, "%B %Y")))
   })
   policy_desc <- reactive({
     req(input$timeline_selected)
