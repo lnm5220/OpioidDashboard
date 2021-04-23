@@ -1,0 +1,118 @@
+library(shinydashboard)
+library(shinyWidgets)
+
+ui <- dashboardPage(
+  dashboardHeader(title = "Opioid dashboard"),
+  dashboardSidebar(sidebarMenu(
+    menuItem("Home", tabName = "home", icon = icon("dashboard")),
+    menuItem("About_US", tabName = "about", icon = icon("th")))),
+  dashboardBody(
+    # Boxes need to be put in a row (or column)
+    tabItems(
+      tabItem(tabName = "home",
+    fluidRow(
+      width = 12,
+      height = "2000px",
+      box( tags$h3("Welcome to the Opioid & Data Dashboard (OPADD)", align = "center"),
+           width = 12,
+           height = "100%",
+           tags$img(
+                    src = "home.jpg"
+                    )),
+      box ( tags$h3("OPADD Project Summary", align = "center"),
+            width = 12,
+            column(width = 6, align = "left", p("Ruskin Bond used to spend his summer at his grandmother’s house in Dehradun. While taking the train, he always had to pass through a small station called Deoli. No one used to get down at the station and nothing happened there. Until one day he sees a girl selling fruit and he is unable to forget her.
+
+What Is Great About It: Ruskin Bond is a writer who can communicate deep feelings in a simple way. This story is about our attachment to strangers and why we cherish them even though we do not meet them ever again.")),
+            column(width = 6, align = "left", p("What Is Great About It: Modern workplaces often feel like theaters where we pretend to work rather than get actual work done. The speaker exposes this reality that nobody will ever admit to. He over-explains everything from the view out the office window to the intimate details of everyone’s life—from the overweight loner to the secret serial killer.
+
+It talks about the things that go unsaid; how people at the office know about the deep secrets of our home life, but do not talk about it. Instead, the secrets become just blend into the office environment, like a potted plant that is seen but does not stand out.
+
+The speaker accomplishes this by discussing the details of the tragic death of a coworker’s wife in the same unwavering, mundane (normal) tone as he discusses the details of the copier and office refrigerator. This absurd balance manages to make the story both light and deep at the same time."))
+      )
+      
+    )),
+    tabItem( tabName = "about",
+    h1("Meet Team OPADD", align = "left"),
+    p("Under the advisory of Dr.Chen, a team of seven passonate undergraduates from different majors collaborated to create an online Opioid dashboard for their capstone project."),
+    fluidRow(
+      width = 12,
+      height = "300px",
+      box(width = 12,
+          column(width = 5, align = "left",
+                 img(src="Dr.Chen.jpg", width=250, height = "250px")),
+          column(width = 7, div(style = "height:250px;width:100%",
+                                tags$h3("Qiushi Chen (陈秋实), PhD"),p("Prior to joining Penn State, l worked as post-doctoral fellow at Institute for Technology Assessment in Massachusetts General Hospital (MGH-ITA) in 2017. I received my PhD degree in Operations Research in 2016 from the School of Industrial and Systems Engineering, Georgia Institute of Technology. I received my bachelor’s degree in Industrial Engineering from Tsinghua University, China, in 2010.")))
+      )
+    ),
+    fluidRow(
+        width = 12,
+        height = "300px",
+        box(
+          width = 12,
+          column(width = 5, align = "left",
+                        img(src="Ally.jpg", width=250, height = "250px")),
+                 column(width = 7, div(style = "height:200px;width:100%",
+                                       tags$h3("Alexandra Weaver"),p("Alexandra Weaver is an Industrial Engineering senior currently attending Penn State University. She explored her interest in process improvement, focusing on human factors when she was hired to work for a local business in her hometown as an Intern. After graduation, Alexandra hopes to work for a company doing process improvement focusing on discrete event simulation programming. In her free time, she is a dog mom to a very sassy Australian and German shepherd named Harley.")))
+                 )),
+    fluidRow(
+      width = 12,
+      height = "300px",
+      box(width = 12,
+          column(width = 5, align = "left",
+                 img(src="Leah.jpg", width=250, height = "250px")),
+          column(width = 7, div(style = "height:200px;width:100%",
+                                tags$h3("Leah Miller"),p("Leah Miller is senior Applied Data Sciences student at Penn State with a minor in Bioethics & Medical Humanities. Upon graduation, she will be working at Eli Lilly as an IT Analyst to continue fulfilling her passion of discovering the intersection of healthcare and technology. In her free time, Leah enjoys doing calligraphy and bullet journaling. ")))
+      )),
+    fluidRow(
+      width = 12,
+      height = "300px",
+      box(width = 12,
+          column(width = 5, align = "left",
+                 img(src="Jack.jpg", width=250, height = "250px")),
+          column(width = 7, div(style = "height:200px;width:100%",
+                                tags$h3("John Koons"),p("John Koons is a senior majoring in Industrial Engineering at Penn State. His experience includes two internships working in manufacturing engineering with a focus on data analysis and process improvement. After graduation, John will begin working for Technomics, Inc. in Arlington, Virginia as a consultant where he will be working on data analytics and cost estimation projects for the United States Government. In his free time John enjoys running and even ran the Philadelphia Marathon during his freshman year at Penn State.")))
+      )),
+    fluidRow(
+      width = 12,
+      height = "300px",
+      box(width = 12,
+          height = "350px",
+          column(width = 5, align = "left",
+                 img(src="Andrew.jpg", width=250, height = "300px")),
+          column(width = 7, div(style = "height:250px;width:100%",
+                                tags$h3("Andrew Briglia"),p("Andrew Briglia is an Industrial Engineering student with a minor in Entrepreneurship & Innovation from the Penn State College of Engineering. Andrew’s primary experience comes from process improvement and supply chain management internships in the high tech and pharmaceutical industry where he helped reroute supply chains and create dashboards to track long-term forecasts and KPIs for major product lines. Upon graduation, he will be working at Merck in their Manufacturing Leadership Development Program, pursuing his passion for data analytics and business development. One fun fact about Andrew is that he is starting a Sports Data Management business! Go check it out at", tags$a(href = "www.sportsdatanow.com.")))
+      ))),
+
+    fluidRow(
+      width = 12,
+      height = "300px",
+        box(width = 12,
+          column(width = 5, align = "left",
+                        img(src="Kelly.jpg", width=250, height = "250px")),
+                 column(width = 7, div(style = "height:200px;width:100%",
+                                       tags$h3("Kelly Cooper"),p("Kelly Cooper is a senior at Penn State University, double majoring in Mathematics and Applied Data Science. Kelly has had internship experiences in UX/UI design, data analytics, as well as digital marketing. She enjoys problem solving and has a passion for innovation. Upon graduation, she will be joining Amazon Operations as a full-time Area Manager. Aside from academics, Kelly is a licensed esthetician who enjoys yoga and playing piano.")))
+        )),
+
+    fluidRow(
+      width = 12,
+      height = "300px",
+        box(width = 12,
+          column(width = 5, align = "left",
+                        img(src="Zixuan.jpg", width=250, height = "250px")),
+                 column(width = 7, div(style = "height:200px;width:100%",
+                                       tags$h3("Zixuan Feng"),p("Zixuan Feng is a senior Industrial Engineering student at Penn State. His experience included two internships and three research assistantships within and outside the Penn State IME department. He has broad experience in large-scale data handling with R and implementing the fixed effect model. He has been working as a teaching assistant and teaching intern since his freshman year. He is currently serving as a graduate-level teaching assistant in the Smeal College of Business for SCM 421 (the supply chain analytics).")))
+        )),
+    fluidRow(
+      width = 12,
+      height = "300px",
+      box(width = 12,
+          column(width = 5, align = "left",
+                 img(src="Benson.jpg", width=250, height = "250px")),
+          column(width = 7, div(style = "height:200px;width:100%",
+                                tags$h3("Benson Wainaina"),p("Benson Wainaina is a senior currently pursuing a major in Computational Data Science. He has experience in building APIs, data analysis using R and database management using SQL. Through the Nittany AI challenge, hosted annually by Penn State, he utilized his skills to build an API that helps learners access course material. The team, Nyansapo, which he was part of won the competition last year. While not busy staring at code, Benson can be found playing FIFA with friends.")))
+      ))
+))))
+
+server <- function(input, output) {}
+shinyApp(ui, server)
